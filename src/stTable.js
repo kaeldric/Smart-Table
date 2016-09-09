@@ -6,6 +6,7 @@ ng.module('smart-table')
     var safeGetter;
     var orderBy = $filter('orderBy');
     var filter = $filter('filter');
+    var resetPageHandler = function() { return true; };
     var safeCopy = copyRefs(displayGetter($scope));
     var tableState = {
       sort: {},
@@ -68,7 +69,9 @@ ng.module('smart-table')
         return safeGetter($scope);
       }, function (newValue, oldValue) {
         if (newValue !== oldValue) {
-          tableState.pagination.start = 0;
+          if (resetPageHandler(newValue, oldValue)){
+            tableState.pagination.start = 0;
+          }
           updateSafeCopy();
         }
       });
@@ -194,6 +197,15 @@ ng.module('smart-table')
     };
 
     /**
+     * Use a function to determine if pagination should be reset after data change between
+     * newValue and oldValue, as it is by default
+     * @param resetPageHandlerName the name under which the comparer function is registered
+     */
+    this.setResetPagerHandler = function setResetPagerHandler (resetPageHandlerName) {
+      resetPageHandler = $parse(resetPageHandlerName)($scope);
+    };
+
+    /**
      * Usually when the safe copy is updated the pipe function is called.
      * Calling this method will prevent it, which is something required when using a custom pipe function
      */
@@ -213,6 +225,10 @@ ng.module('smart-table')
 
         if (attr.stSetSort) {
           ctrl.setSortFunction(attr.stSetSort);
+        }
+
+        if (attr.stSetResetPagerHandler) {
+          ctrl.setResetPagerHandler(attr.stSetResetPagerHandler);
         }
       }
     };
